@@ -18,7 +18,11 @@ system('rm output/*.* > /dev/null 2>&1')
 with open(circuitFile, "r") as f:
 		circuit = f.read()
 		tempCircuit = circuit
-
+#
+# constans
+#
+VCC = 12
+R1 = 47000
 # make variations
 #
 # ranges:
@@ -37,6 +41,11 @@ hFE_step = 1
 temperature_minRange = 0
 temperature_maxRange = 1 # 80
 temperature_step = 1
+#
+# R2 
+R2_minRange = 2200
+R2_maxRange = 10000
+R2_step = 100
 #
 # transient
 transientMin = "0.1m"

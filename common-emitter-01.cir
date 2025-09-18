@@ -1,0 +1,21 @@
+* project: autobias-ai
+* author: Varga Laszlo
+* website: github.com/vargalaszlo87
+*
+* file: common emitter amplifier netlist
+* version: 01
+* last-updated:  2025.09.18
+
+R1 N001 N005 {R1}
+R2 N005 0 {R2}
+RE N006 0 {RE}
+RC N001 N002 {RC}
+CE N006 0 {CE}
+VCC N001 0 {VCC}
+V1 N004 0 SINE(0 10m 1k)
+CIN N005 N004 {CIN}
+COUT out N002 {COUT}
+RLOAD out 0 {RLOAD}
+
+Q1 N002 N005 N006 0 QNPN
+.model QNPN NPN (BF={HFE})

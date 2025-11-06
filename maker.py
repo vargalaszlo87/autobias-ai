@@ -43,9 +43,9 @@ temperature_maxRange = 1 # 80
 temperature_step = 1
 #
 # R2 
-R2_minRange = 2200
-R2_maxRange = 10000
-R2_step = 100
+R2_minRange = 2200 # 220
+R2_maxRange = 10000 # 10000
+R2_step = 100 # 1000
 #
 # transient
 transientMin = "0.1m"
@@ -56,67 +56,70 @@ transientStep = ""
 
 system('echo "Temperature[Clesius];hFE;RLOAD[ohm];RMS(V(out))[A];RMS(I(RLOAD))[A]" > output/test.txt')
 
-temperatureValue = temperature_minRange
-while (temperatureValue <= temperature_maxRange):
-		valuehFE = hFE_minRange
-		while (valuehFE <= hFE_maxRange):
-				valueRLOAD = RLOAD_minRange
-				while (valueRLOAD <= RLOAD_maxRange):
-						# reload the circuit
-						circuit = tempCircuit
-						
-						# options
-						circuit += "\n.options savecurrents"
-						circuit += "\n.temp "+str(temperatureValue)
-						circuit += "\n.fourier 1k V(out)"
-						
-						# params
-						circuit += "\n.param R1=47000 R2=10000 RC=4.7k RE=1k CE=100u CIN=10u COUT=10u RLOAD=" + str(valueRLOAD) + " VCC=12 HFE="+str(valuehFE)+""
+R2_value = R2_minRange
+while (R2_value <= R2_maxRange):
+		temperatureValue = temperature_minRange
+		while (temperatureValue <= temperature_maxRange):
+				valuehFE = hFE_minRange
+				while (valuehFE <= hFE_maxRange):
+						valueRLOAD = RLOAD_minRange
+						while (valueRLOAD <= RLOAD_maxRange):
+								# reload the circuit
+								circuit = tempCircuit
+								
+								# options
+								circuit += "\n.options savecurrents"
+								circuit += "\n.temp "+str(temperatureValue)
+								circuit += "\n.fourier 1k V(out)"
+								
+								# params
+								circuit += "\n.param R1=47000 R2=10000 RC=4.7k RE=1k CE=100u CIN=10u COUT=10u RLOAD=" + str(valueRLOAD) + " VCC=12 HFE="+str(valuehFE)+""
 
-						# control
-						circuit += "\n.control"
-						
-						# operations
-						circuit += "\nop"
-						circuit += "\ntran "+transientMin+" "+transientMax+" " + transientStep
+								# control
+								circuit += "\n.control"
+								
+								# operations
+								circuit += "\nop"
+								circuit += "\ntran "+transientMin+" "+transientMax+" " + transientStep
 
-						# datas
-						circuit += "\nwrdata output/data_"+str(valueRLOAD)+"_"+str(valuehFE)+"_"+str(temperatureValue)+".txt V(out) @RLOAD[i]"
+								# datas
+								circuit += "\nwrdata output/data_"+str(valueRLOAD)+"_"+str(valuehFE)+"_"+str(temperatureValue)+".txt V(out) @RLOAD[i]"
 
 
-						# ends
-						circuit += "\n.endc"
-						circuit += "\n.end"
-						
-						# temp file
-						# ideiglenes fájl
-						with open("circuit.cir", "w") as f:
-								f.write(circuit)
-						
-						subprocess.run(["ngspice", "-b", "circuit.cir"],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+								# ends
+								circuit += "\n.endc"
+								circuit += "\n.end"
+								
+								# temp file
+								# ideiglenes fájl
+								with open("circuit.cir", "w") as f:
+										f.write(circuit)
+								
+								subprocess.run(["ngspice", "-b", "circuit.cir"],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
 
-						# make RMS
-						data = np.loadtxt("output/data_"+str(valueRLOAD)+"_"+str(valuehFE)+"_"+str(temperatureValue)+".txt")
-						col2 = data[:,1]
-						col4 = data[:,3]
+								# make RMS
+								data = np.loadtxt("output/data_"+str(valueRLOAD)+"_"+str(valuehFE)+"_"+str(temperatureValue)+".txt")
+								col2 = data[:,1]
+								col4 = data[:,3]
 
-						# RMS számítás
-						rms2 = np.sqrt(np.mean(col2**2))
-						rms4 = np.sqrt(np.mean(col4**2))
+								# RMS számítás
+								rms2 = np.sqrt(np.mean(col2**2))
+								rms4 = np.sqrt(np.mean(col4**2))
 
-						system('echo "'+str(temperatureValue)+';'+str(valuehFE)+';'+str(valueRLOAD)+';'+str(rms2)+';'+str(rms4)+'" >> output/test.txt')
+								system('echo "'+str(temperatureValue)+';'+str(valuehFE)+';'+str(valueRLOAD)+';'+str(rms2)+';'+str(rms4)+'" >> output/test.txt')
 
-						# deletes
-						system("rm output/data_"+str(valueRLOAD)+"_"+str(valuehFE)+"_"+str(temperatureValue)+".txt");
-						
-						data = ""
-						col2 = ""
-						col4 = ""
+								# deletes
+								system("rm output/data_"+str(valueRLOAD)+"_"+str(valuehFE)+"_"+str(temperatureValue)+".txt");
+								
+								data = ""
+								col2 = ""
+								col4 = ""
 
-						valueRLOAD = valueRLOAD + RLOAD_step
+								valueRLOAD = valueRLOAD + RLOAD_step
 
-				valuehFE = valuehFE + hFE_step
+						valuehFE = valuehFE + hFE_step
 
-		temperatureValue = temperatureValue + temperature_step
+				temperatureValue = temperatureValue + temperature_step
 
+		R2_value = R2_value + R2_step
 

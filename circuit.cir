@@ -21,9 +21,9 @@ Q1 N002 N005 N006 0 QNPN
 .model QNPN NPN (BF={HFE})
 
 .options savecurrents
-.temp 1
+.temp 20
 .fourier 1k V(out)
-.param R1=10000 R2=2200 RC=1000 RE=10 CE=100u CIN=10u COUT=10u RLOAD=62 VCC=12 HFE=101
+.param R1=10000 R2=2000 RC=1000 RE=0 CE=100u CIN=10u COUT=10u RLOAD=73 VCC=12 HFE=300
 .control
 op
 tran 0.1m 20m 

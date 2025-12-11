@@ -61,13 +61,13 @@ countVariation.append((RLOAD_maxRange - RLOAD_minRange) / RLOAD_step)
 #
 # hFE
 hFE_minRange = 100
-hFE_maxRange = 101 # 800
-hFE_step = 1
+hFE_maxRange = 800 # 800
+hFE_step = 50
 countVariation.append((hFE_maxRange - hFE_minRange) / hFE_step)
 #
 # Temperature °C
-temperature_minRange = 0
-temperature_maxRange = 1 # 80
+temperature_minRange = 20
+temperature_maxRange = 40 # 80
 temperature_step = 1
 countVariation.append((temperature_maxRange - temperature_minRange) / temperature_step)
 #
@@ -78,20 +78,20 @@ R1_step = 1000
 countVariation.append((R1_maxRange - R1_minRange) / R1_step)
 #
 # R2 
-R2_minRange = 2200 # 220
-R2_maxRange = 10000 # 10000
-R2_step = 100 # 1000
+R2_minRange = 2000
+R2_maxRange = 5000 
+R2_step = 100
 countVariation.append((R2_maxRange - R2_minRange) / R2_step)
 #
 # RE
-RE_minRange = 10
-RE_maxRange = 1000
+RE_minRange = 0
+RE_maxRange = 500
 RE_step = 100
 countVariation.append((RE_maxRange - RE_minRange) / RE_step)
 #
 # RC
 RC_minRange = 1000
-RC_maxRange = 6800
+RC_maxRange = 5000
 RC_step = 100
 countVariation.append((RC_maxRange - RC_minRange) / RC_step)
 #
@@ -104,7 +104,7 @@ transientStep = ""
 
 # variations:
 maxVariations = math.floor(math.prod(countVariation));
-maxFileSize = math.floor(maxVariations * 70 / math.pow(1024,2))
+maxFileSize = math.floor(maxVariations * 47 / math.pow(1024,2))
 
 system('echo "Temperature[Clesius];hFE;RLOAD[ohm];R1[ohm];R2[ohm];RC[ohm];RE[ohm];RMS(V(out))[A];RMS(I(RLOAD))[A]" > output/' + outputFile)
 
@@ -134,7 +134,7 @@ while (R1_value <= R1_maxRange):
                                 system("clear")
                                 print (title)
                                 print (str(counterMain / maxVariations * 100) + "% -> " + f"{counterMain:,}".replace(",", " ") + " / " + f"{maxVariations:,}".replace(",", " ") + "\r")
-                                print ("File size in Mbyte: " + maxFileSize);
+                                print ("File size in Mbyte: " + f"{maxFileSize:,}".replace(",", " "));
 
                                 #values now
                                 params = {
@@ -194,7 +194,7 @@ while (R1_value <= R1_maxRange):
                             rms2 = np.sqrt(np.mean(col2**2))
                             rms4 = np.sqrt(np.mean(col4**2))
 
-                            system('echo "'+str(valueTemperature)+';'+str(valuehFE)+';'+str(valueRLOAD)+';'+str(R1_value)+';'+str(R2_value)+';'+str(RC_value)+';'+str(RE_value)+';'+str(rms2)+';'+str(rms4)+'" >> output/' + outputFile)
+                            system('echo "'+str(valueTemperature)+';'+str(valuehFE)+';'+str(valueRLOAD)+';'+str(R1_value)+';'+str(R2_value)+';'+str(RC_value)+';'+str(RE_value)+';'+f"{rms2:.3e}"+';'+f"{rms4:.3e}"+'" >> output/' + outputFile)
 
                             # deletes
                             # system("rm output/" + tempFileName);

@@ -4,26 +4,44 @@ import subprocess
 import tempfile
 import numpy as np
 from os import system
+import math
+import sys
+import json
+
+# clear all 
+system ("clear");
 
 print ("Make learn datas");
 
 circuitFile = "common-emitter-01.cir"
+outputFile = "output.txt"
 
-# delete files
-#subprocess.run("rm /autobasis-ai/output/*.*")
-system('rm output/test.txt > /dev/null 2>&1')
-system('rm output/*.* > /dev/null 2>&1')
-
+#
+# delete or continue
+#
+isContinue = 0
+if len(sys.argv) > 1:
+    if sys.argv[1] == "continue":
+        isContinue = 1
+if isContinue == 0:
+    system('rm output/*.* > /dev/null 2>&1')
+#
 # read the circuit-file
 with open(circuitFile, "r") as f:
 		circuit = f.read()
 		tempCircuit = circuit
 #
+
+               
+#
 # constans
 #
 VCC = 12
-R1 = 47000
 # make variations
+#
+# the counter of the variations
+# 
+countVariation = []
 #
 # ranges:
 #
@@ -31,21 +49,43 @@ R1 = 47000
 RLOAD_minRange = 1
 RLOAD_maxRange = 100 # 1000
 RLOAD_step = 1
+countVariation.append((RLOAD_maxRange - RLOAD_minRange) / RLOAD_step)
 #
 # hFE
 hFE_minRange = 100
 hFE_maxRange = 101 # 800
 hFE_step = 1
+countVariation.append((hFE_maxRange - hFE_minRange) / hFE_step)
 #
 # Temperature °C
 temperature_minRange = 0
 temperature_maxRange = 1 # 80
 temperature_step = 1
+countVariation.append((temperature_maxRange - temperature_minRange) / temperature_step)
+#
+# R1 
+R1_minRange = 10000
+R1_maxRange = 100000
+R1_step = 1000
+countVariation.append((R1_maxRange - R1_minRange) / R1_step)
 #
 # R2 
 R2_minRange = 2200 # 220
 R2_maxRange = 10000 # 10000
 R2_step = 100 # 1000
+countVariation.append((R2_maxRange - R2_minRange) / R2_step)
+#
+# RE
+RE_minRange = 10
+RE_maxRange = 1000
+RE_step = 100
+countVariation.append((RE_maxRange - RE_minRange) / RE_step)
+#
+# RC
+RC_minRange = 1000
+RC_maxRange = 6800
+RC_step = 100
+countVariation.append((RC_maxRange - RC_minRange) / RC_step)
 #
 # transient
 transientMin = "0.1m"
@@ -54,72 +94,112 @@ transientStep = ""
 
 # core
 
-system('echo "Temperature[Clesius];hFE;RLOAD[ohm];RMS(V(out))[A];RMS(I(RLOAD))[A]" > output/test.txt')
+# variations:
+maxVariations = math.floor(math.prod(countVariation));
+print ("Max variations: " + str(maxVariations))
 
-R2_value = R2_minRange
-while (R2_value <= R2_maxRange):
-		temperatureValue = temperature_minRange
-		while (temperatureValue <= temperature_maxRange):
-				valuehFE = hFE_minRange
-				while (valuehFE <= hFE_maxRange):
-						valueRLOAD = RLOAD_minRange
-						while (valueRLOAD <= RLOAD_maxRange):
-								# reload the circuit
-								circuit = tempCircuit
-								
-								# options
-								circuit += "\n.options savecurrents"
-								circuit += "\n.temp "+str(temperatureValue)
-								circuit += "\n.fourier 1k V(out)"
-								
-								# params
-								circuit += "\n.param R1=47000 R2=10000 RC=4.7k RE=1k CE=100u CIN=10u COUT=10u RLOAD=" + str(valueRLOAD) + " VCC=12 HFE="+str(valuehFE)+""
+system('echo "Temperature[Clesius];hFE;RLOAD[ohm];R1[ohm];R2[ohm];RC[ohm];RE[ohm];RMS(V(out))[A];RMS(I(RLOAD))[A]" > output/' + outputFile)
 
-								# control
-								circuit += "\n.control"
-								
-								# operations
-								circuit += "\nop"
-								circuit += "\ntran "+transientMin+" "+transientMax+" " + transientStep
+counterMain = 0
+R1_value = R1_minRange
+while (R1_value <= R1_maxRange):
+    R2_value = R2_minRange
+    while (R2_value <= R2_maxRange):
+        RC_value = RC_minRange
+        while (RC_value <= RC_maxRange):
+            RE_value = RE_minRange
+            while (RE_value <= RE_maxRange):
+                valueTemperature = temperature_minRange
+                while (valueTemperature <= temperature_maxRange):
+                    valuehFE = hFE_minRange
+                    while (valuehFE <= hFE_maxRange):
+                        valueRLOAD = RLOAD_minRange
+                        while (valueRLOAD <= RLOAD_maxRange):
+                            
+                            # main counter
+                            counterMain = counterMain + 1
+                            if counterMain % 100 == 0:
+                                system("clear")
+                                print (str(counterMain / maxVariations * 100) + "% -> " + str(counterMain) + " / " + str(maxVariations))
 
-								# datas
-								circuit += "\nwrdata output/data_"+str(valueRLOAD)+"_"+str(valuehFE)+"_"+str(temperatureValue)+".txt V(out) @RLOAD[i]"
+                                #values now
+                                params = {
+                                    "R1": R1_value,
+                                    "R2": R2_value,
+                                    "RC": RC_value,
+                                    "RE": RE_value,
+                                    "temperature": valueTemperature,
+                                    "hFE" : valuehFE,
+                                    "RLOAD" : valueRLOAD
+                                }
+                                with open("output/params.json", "w") as f:
+                                    json.dump(params, f, indent=4)
+                                                           
+                            # reload the circuit
+                            circuit = tempCircuit
+                            
+                            # options
+                            circuit += "\n.options savecurrents"
+                            circuit += "\n.temp "+str(valueTemperature)
+                            circuit += "\n.fourier 1k V(out)"
+                            
+                            # params
+                            circuit += "\n.param R1=" + str(R1_value) + " R2=" + str(R2_value) + " RC=" + str(RC_value) + " RE=" +str(RE_value)+ " CE=100u CIN=10u COUT=10u RLOAD=" + str(valueRLOAD) + " VCC=12 HFE="+str(valuehFE)+""
 
+                            # control
+                            circuit += "\n.control"
+                            
+                            # operations
+                            circuit += "\nop"
+                            circuit += "\ntran "+transientMin+" "+transientMax+" " + transientStep
 
-								# ends
-								circuit += "\n.endc"
-								circuit += "\n.end"
-								
-								# temp file
-								# ideiglenes fájl
-								with open("circuit.cir", "w") as f:
-										f.write(circuit)
-								
-								subprocess.run(["ngspice", "-b", "circuit.cir"],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+                            # datas
+                            # tempFileName = "data_"+str(valueRLOAD)+"_"+str(valuehFE)+"_"+str(valueTemperature)+".txt"
+                            tempFile = "tempFile.txt"
+                            circuit += "\nwrdata output/" +tempFile+ " V(out) @RLOAD[i]"
 
-								# make RMS
-								data = np.loadtxt("output/data_"+str(valueRLOAD)+"_"+str(valuehFE)+"_"+str(temperatureValue)+".txt")
-								col2 = data[:,1]
-								col4 = data[:,3]
+                            # ends
+                            circuit += "\n.endc"
+                            circuit += "\n.end"
+                            
+                            # temp file
+                            # ideiglenes fájl
+                            with open("circuit.cir", "w") as f:
+                                f.write(circuit)
+                            f.close()    
+                                                        
+                            subprocess.run(["ngspice", "-b", "circuit.cir"],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
 
-								# RMS számítás
-								rms2 = np.sqrt(np.mean(col2**2))
-								rms4 = np.sqrt(np.mean(col4**2))
+                            # make RMS
+                            data = np.loadtxt("output/" + tempFile)
+                            col2 = data[:,1]
+                            col4 = data[:,3]
 
-								system('echo "'+str(temperatureValue)+';'+str(valuehFE)+';'+str(valueRLOAD)+';'+str(rms2)+';'+str(rms4)+'" >> output/test.txt')
+                            # RMS számítás
+                            rms2 = np.sqrt(np.mean(col2**2))
+                            rms4 = np.sqrt(np.mean(col4**2))
 
-								# deletes
-								system("rm output/data_"+str(valueRLOAD)+"_"+str(valuehFE)+"_"+str(temperatureValue)+".txt");
-								
-								data = ""
-								col2 = ""
-								col4 = ""
+                            system('echo "'+str(valueTemperature)+';'+str(valuehFE)+';'+str(valueRLOAD)+';'+str(R1_value)+';'+str(R2_value)+';'+str(RC_value)+';'+str(RE_value)+';'+str(rms2)+';'+str(rms4)+'" >> output/' + outputFile)
 
-								valueRLOAD = valueRLOAD + RLOAD_step
+                            # deletes
+                            # system("rm output/" + tempFileName);
+                            
+                            data = ""
+                            col2 = ""
+                            col4 = ""
 
-						valuehFE = valuehFE + hFE_step
+                            valueRLOAD = valueRLOAD + RLOAD_step
 
-				temperatureValue = temperatureValue + temperature_step
+                        valuehFE = valuehFE + hFE_step
 
-		R2_value = R2_value + R2_step
+                    valueTemperature = valueTemperature + temperature_step
 
+                R2_value = R2_value + R2_step
+
+            RE_value = RE_value + RE_step
+        
+        RC_value = RC_value + RC_step
+
+    R1_value = R1_value + R1_step
+    
+    

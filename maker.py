@@ -11,7 +11,15 @@ import json
 # clear all 
 system ("clear");
 
-print ("Make learn datas");
+#
+# title 
+#
+name = "dataMaker"
+version = "v.1.0"
+title = name + " " + version + "\n"
+#
+print (title);
+#
 
 circuitFile = "common-emitter-01.cir"
 outputFile = "output.txt"
@@ -96,7 +104,7 @@ transientStep = ""
 
 # variations:
 maxVariations = math.floor(math.prod(countVariation));
-print ("Max variations: " + str(maxVariations))
+maxFileSize = math.floor(maxVariations * 70 / math.pow(1024,2))
 
 system('echo "Temperature[Clesius];hFE;RLOAD[ohm];R1[ohm];R2[ohm];RC[ohm];RE[ohm];RMS(V(out))[A];RMS(I(RLOAD))[A]" > output/' + outputFile)
 
@@ -116,11 +124,17 @@ while (R1_value <= R1_maxRange):
                         valueRLOAD = RLOAD_minRange
                         while (valueRLOAD <= RLOAD_maxRange):
                             
-                            # main counter
+                            #
+                            # status refresh
+                            #
                             counterMain = counterMain + 1
                             if counterMain % 100 == 0:
+                                
+                                # screen 
                                 system("clear")
-                                print (str(counterMain / maxVariations * 100) + "% -> " + str(counterMain) + " / " + str(maxVariations))
+                                print (title)
+                                print (str(counterMain / maxVariations * 100) + "% -> " + f"{counterMain:,}".replace(",", " ") + " / " + f"{maxVariations:,}".replace(",", " ") + "\r")
+                                print ("File size in Mbyte: " + maxFileSize);
 
                                 #values now
                                 params = {
@@ -133,7 +147,8 @@ while (R1_value <= R1_maxRange):
                                     "RLOAD" : valueRLOAD
                                 }
                                 with open("output/params.json", "w") as f:
-                                    json.dump(params, f, indent=4)
+                                    json.dump(params, f, indent=4)       
+                            #
                                                            
                             # reload the circuit
                             circuit = tempCircuit
